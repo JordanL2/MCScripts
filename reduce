@@ -1,0 +1,17 @@
+#!/usr/bin/sh
+
+# Minimum ticks (seconds * 20, eg 1200 = 1 minute)
+min_ticks=$1
+
+# Directory to move regions to remove to
+move_to_dir=$2
+
+for f in `ls -1`
+do
+	ticks=`$(dirname "$0/")/inhabitedtime.py $f`
+	if [[ "$ticks" -lt "$min_ticks" ]]
+	then
+		echo $f
+		mv $f "$move_to_dir/"
+	fi
+done
