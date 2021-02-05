@@ -20,7 +20,13 @@ def repr_uuid(uuid):
     return '-'.join([str(hex(i if i >= 0 else i + 2**32))[2:] for i in uuid])
 
 def add_entity(entities, entity, riding=None):
+    uuid = repr_uuid(entity['UUID'].value)
+    entity_x = entity['Pos'][0].value
+    entity_y = entity['Pos'][1].value
+    entity_z = entity['Pos'][2].value
+
     entities[uuid] = {
+        'type': entity['id'].value,
         'x': entity_x,
         'y': entity_y,
         'z': entity_z,
@@ -29,7 +35,7 @@ def add_entity(entities, entity, riding=None):
         entities[uuid]['health'] = entity['Health'].value
     if riding is not None:
         entities[uuid]['riding'] = riding['id'].value
-    if entity_type == 'villager':
+    if entity['id'].value == 'villager':
         entities[uuid] = entities[uuid] | {
             'inventory': [(i[0].value, i[1].value) for i in entity['Inventory']],
             'profession': entity['VillagerData']['profession'].value,
@@ -43,9 +49,7 @@ scriptpath = sys.argv.pop(0)
 if len(sys.argv) < 6:
     fatal("Usage: entity_info <PATH/TO/MC/SAVE> <TYPE> <DIMENSION> <X> <Z> <RADIUS>")
 mcsave = sys.argv.pop(0)
-entity_type = sys.argv.pop(0)
-if ':' not in entity_type:
-    entity_type = 'minecraft:' + entity_type
+entity_types = [e if ':' in e else 'minecraft:' + e for e in sys.argv.pop(0).split(',')]
 dim = int(sys.argv.pop(0))
 x = int(sys.argv.pop(0))
 z = int(sys.argv.pop(0))
@@ -130,16 +134,15 @@ for region_x in range(minx_region, maxx_region + 1):
             zPos = chunk_nbt['Level']['zPos'].value
             if xPos >= minx_chunk and xPos <= maxx_chunk and zPos >= minz_chunk and zPos <= maxz_chunk:
                 for entity in chunk_nbt['Level']['Entities']:
-                    uuid = repr_uuid(entity['UUID'].value)
                     entity_x = entity['Pos'][0].value
                     entity_y = entity['Pos'][1].value
                     entity_z = entity['Pos'][2].value
                     if entity_x >= minx and entity_x <= maxx and entity_z >= minz and entity_z <= maxz:
-                        if entity['id'].value == entity_type:
+                        if entity['id'].value in entity_types:
                             add_entity(entities, entity)
                         if 'Passengers' in entity:
                             for passenger in entity['Passengers']:
-                                if passenger['id'].value == entity_type:
+                                if passenger['id'].value in entity_types:
                                     add_entity(entities, passenger, entity)
 
 
@@ -157,12 +160,13 @@ for uuid, entity in sorted(entities.items(), key=lambda v: v[1][sort_dim], rever
     riding = ''
     if 'riding' in entity:
         riding = " | Riding: {}".format(entity['riding'])
-    print("{} {} {}{}{}".format(
+    print("{} | {} {} {}{}{}".format(
+        entity['type'],
         math.floor(entity['x']), math.floor(entity['y']), math.floor(entity['z']),
         health, riding))
 
     # Villager
-    if entity_type == 'minecraft:villager':
+    if entity['type'] == 'minecraft:villager':
     
         # Profession
         profession = entity['profession']
