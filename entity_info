@@ -28,7 +28,7 @@ Optional Arguments:
     reverse           - Whether or not to reverse the order ['true' or 'false']
     use_last_modified - Whether or not to auto-adjust the age of entities by using the
                         game file's last modified time
-    show_uuid         - whether or not to print out the UUID of each entity found
+    show_uuid         - Whether or not to print out the UUID of each entity found
 """
 
 
