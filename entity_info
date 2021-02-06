@@ -48,13 +48,13 @@ profession_levels = ['Novice', 'Apprentice', 'Journeyman', 'Expert', 'Master']
 # Get mandatory arguments
 scriptpath = sys.argv.pop(0)
 if len(sys.argv) < 6:
-    fatal("Usage: entity_info <PATH/TO/MC/SAVE> <TYPE> <DIMENSION> <X> <Z> <RADIUS>")
+    fatal("Usage: entity_info <PATH/TO/MC/SAVE> <DIMENSION> <X> <Z> <RADIUS> <TYPE>")
 mcsave = sys.argv.pop(0)
-entity_types = [e if ':' in e else 'minecraft:' + e for e in sys.argv.pop(0).split(',')]
 dim = int(sys.argv.pop(0))
 x = int(sys.argv.pop(0))
 z = int(sys.argv.pop(0))
 r = int(sys.argv.pop(0))
+entity_types = [e if ':' in e else 'minecraft:' + e for e in sys.argv.pop(0).split(',')]
 
 # Get optional arguments
 sort_dim = 'z'
