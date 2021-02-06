@@ -42,7 +42,10 @@ def add_entity(entities, entity, riding=None):
             'gossips': [(g['Type'].value, g['Value'].value, g['Target'].value) for g in entity['Gossips']],
         }
 
+# Constants
+profession_levels = ['Novice', 'Apprentice', 'Journeyman', 'Expert', 'Master']
 
+# Get mandatory arguments
 scriptpath = sys.argv.pop(0)
 if len(sys.argv) < 6:
     fatal("Usage: entity_info <PATH/TO/MC/SAVE> <TYPE> <DIMENSION> <X> <Z> <RADIUS>")
@@ -53,6 +56,7 @@ x = int(sys.argv.pop(0))
 z = int(sys.argv.pop(0))
 r = int(sys.argv.pop(0))
 
+# Get optional arguments
 sort_dim = 'z'
 sort_reverse = False
 use_last_modified = 0
@@ -86,6 +90,7 @@ for a in sys.argv:
     else:
         fatal("No such argument: '{}'".format(k))
 
+# Get correct region files for dimension
 if dim == 0:
     region_files = "{}/region".format(mcsave)
 if dim == -1:
@@ -93,27 +98,30 @@ if dim == -1:
 if dim == 1:
     region_files = "{}/DIM1/region".format(mcsave)
 
+# Find block range to search within
 minx = x - r
 maxx = x + r
 minz = z - r
 maxz = z + r
 info("Searching blocks: {},{} to {},{}".format(minx, minz, maxx, maxz))
 
+# Calculate chunk range to search within
 minx_chunk = math.floor(minx / 16)
 maxx_chunk = math.floor(maxx / 16)
 minz_chunk = math.floor(minz / 16)
 maxz_chunk = math.floor(maxz / 16)
 info("Searching chunks: {},{} to {},{}".format(minx_chunk, minz_chunk, maxx_chunk, maxz_chunk))
 
+# Calculate region files to search within
 minx_region = math.floor(minx / 512)
 maxx_region = math.floor(maxx / 512)
 minz_region = math.floor(minz / 512)
 maxz_region = math.floor(maxz / 512)
 info("Searching regions: {},{} to {},{}".format(minx_region, minz_region, maxx_region, maxz_region))
 
+# Search region files for matching entities
 entities = {}
 now = time.time()
-
 for region_x in range(minx_region, maxx_region + 1):
     for region_z in range(minz_region, maxz_region + 1):
         region_file = "{}/r.{}.{}.mca".format(region_files, region_x, region_z)
@@ -143,8 +151,7 @@ for region_x in range(minx_region, maxx_region + 1):
                                 if passenger['id'].value in entity_types:
                                     add_entity(entities, passenger, entity)
 
-
-profession_levels = ['Novice', 'Apprentice', 'Journeyman', 'Expert', 'Master']
+# Output entities found
 for uuid, entity in sorted(entities.items(), key=lambda v: v[1][sort_dim], reverse=sort_reverse):
     
     # UUID
