@@ -3,6 +3,7 @@
 from nbt.nbt import *
 from nbt.region import *
 
+import json
 import math
 import os.path
 import sys
@@ -12,7 +13,7 @@ HELP = """Usage: entity_info <PATH/TO/MC/SAVE> <DIMENSION> <X> <Z> <RADIUS> [opt
 
 Mandatory arguments:
     PATH/TO/MC/SAVE   - Path to the Minecraft game save directory, usually found in ~/.minecraft/saves
-    DIMENSION         - Dimension to search, values are:
+    DIMENSION         - Dimension to search, possible values are:
         -1 = Nether
          0 = Overworld
          1 = End
@@ -29,6 +30,9 @@ Optional Arguments:
     use_last_modified - Whether or not to auto-adjust the age of entities by using the
                         game file's last modified time
     show_uuid         - Whether or not to print out the UUID of each entity found
+    output_type       - Output format, possible values are:
+        human
+        json
 """
 
 
@@ -84,6 +88,7 @@ sort_reverse = False
 use_last_modified = 0
 show_uuid = False
 entity_types = None
+output_type = 'human'
 for a in sys.argv:
     i = a.index('=')
     k = a[0 : i]
@@ -112,6 +117,11 @@ for a in sys.argv:
             fatal("No such show_uuid value: '{}'".format(v))
     elif k == 'entity_types':
         entity_types = [e if ':' in e else 'minecraft:' + e for e in v.split(',')]
+    elif k == 'output_type':
+        if v in ['human', 'json']:
+            output_type = v
+        else:
+            fatal("No such output_type value: '{}'".format(v))
     else:
         fatal("No such argument: '{}'".format(k))
 
@@ -181,53 +191,67 @@ for region_x in range(minx_region, maxx_region + 1):
                                     add_entity(entities, passenger, entity)
 
 # Output entities found
-for uuid, entity in sorted(entities.items(), key=lambda v: v[1][sort_dim], reverse=sort_reverse):
-    
-    # UUID
-    if show_uuid:
-        print(uuid)
-
-    # Show basic info
-    health = ''
-    if 'health' in entity:
-        health = " | {}♥".format(int(entity['health']))
-    riding = ''
-    if 'riding' in entity:
-        riding = " | Riding: {}".format(entity['riding'])
-    print("{} | {} {} {}{}{}".format(
-        entity['type'],
-        math.floor(entity['x']), math.floor(entity['y']), math.floor(entity['z']),
-        health, riding))
-
-    # Villager
-    if entity['type'] == 'minecraft:villager':
-    
-        # Profession
-        profession = entity['profession']
-        if profession != 'minecraft:none':
-            profession += " - " + profession_levels[entity['profession_level'] - 1]
+if output_type == 'human':
+    for uuid, entity in sorted(entities.items(), key=lambda v: v[1][sort_dim], reverse=sort_reverse):
         
-        # Age
-        age = 'Adult'
-        if entity['age'] < 0:
-            seconds = round(-entity['age'] / 20)
-            age = "{}:{:02d} until adult".format(math.floor(seconds / 60), seconds % 60)
-            if use_last_modified == 1:
-                age += " at {}".format(time.strftime("%H:%M:%S", time.localtime(now + seconds)))
+        # UUID
+        if show_uuid:
+            print(uuid)
 
-        print("{} | {}".format(profession, age))
+        # Show basic info
+        health = ''
+        if 'health' in entity:
+            health = " | {}♥".format(int(entity['health']))
+        riding = ''
+        if 'riding' in entity:
+            riding = " | Riding: {}".format(entity['riding'])
+        print("{} | {} {} {}{}{}".format(
+            entity['type'],
+            math.floor(entity['x']), math.floor(entity['y']), math.floor(entity['z']),
+            health, riding))
+
+        # Villager
+        if entity['type'] == 'minecraft:villager':
         
-        # Show inventory
-        for n, i in enumerate(entity['inventory']):
-            print("[{}] {}: {}".format(n + 1, i[0], i[1]))
-        for n in range(len(villager['inventory']) + 1, 9):
-            print("[{}] -".format(n))
+            # Profession
+            profession = entity['profession']
+            if profession != 'minecraft:none':
+                profession += " - " + profession_levels[entity['profession_level'] - 1]
+            
+            # Age
+            age = 'Adult'
+            if entity['age'] < 0:
+                seconds = round(-entity['age'] / 20)
+                age = "{}:{:02d} until adult".format(math.floor(seconds / 60), seconds % 60)
+                if use_last_modified == 1:
+                    age += " at {}".format(time.strftime("%H:%M:%S", time.localtime(now + seconds)))
+
+            print("{} | {}".format(profession, age))
+            
+            # Show inventory
+            for n, i in enumerate(entity['inventory']):
+                print("[{}] {}: {}".format(n + 1, i[0], i[1]))
+            for n in range(len(villager['inventory']) + 1, 9):
+                print("[{}] -".format(n))
+            
+            # Show gossips
+            if len(entity['gossips']) > 0:
+                print("Gossips:")
+                for g in entity['gossips']:
+                    g_uuid = repr_uuid(g[2])
+                    print("- {} {} {}".format(g[0], g[1], g_uuid))
         
-        # Show gossips
-        if len(entity['gossips']) > 0:
-            print("Gossips:")
-            for g in entity['gossips']:
-                g_uuid = repr_uuid(g[2])
-                print("- {} {} {}".format(g[0], g[1], g_uuid))
-    
-    print()
+        print()
+
+elif output_type == 'json':
+
+    json_entities = []
+    for uuid, entity in sorted(entities.items(), key=lambda v: v[1][sort_dim], reverse=sort_reverse):
+        json_entities.append(entity | {'uuid': uuid})
+
+    print(json.dumps({
+        'results': json_entities
+        }))
+
+else:
+    fatal("Invalid output_type value: ''".format(output_type))
