@@ -95,10 +95,14 @@ for a in sys.argv:
 # Get correct region files for dimension
 if dim == 0:
     region_files = "{}/region".format(mcsave)
-if dim == -1:
+elif dim == -1:
     region_files = "{}/DIM-1/region".format(mcsave)
-if dim == 1:
+elif dim == 1:
     region_files = "{}/DIM1/region".format(mcsave)
+else:
+    fatal("Dimension must be -1, 0 or 1")
+if not os.path.exists(region_files):
+    fatal("Directory not found: {}".format(region_files))
 
 # Find block range to search within
 minx = x - r
