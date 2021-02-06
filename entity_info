@@ -8,11 +8,34 @@ import os.path
 import sys
 
 
+HELP = """Usage: entity_info <PATH/TO/MC/SAVE> <DIMENSION> <X> <Z> <RADIUS> [option_name=option_value ...]
+
+Mandatory arguments:
+    PATH/TO/MC/SAVE   - Path to the Minecraft game save directory, usually found in ~/.minecraft/saves
+    DIMENSION         - Dimension to search, values are:
+        -1 = Nether
+         0 = Overworld
+         1 = End
+    X                 - X axis coordinate to search (blocks)
+    Z                 - Z axis coordinate to search (blocks)
+    RADIUS            - Square-radius to search within, will search within a square RADIUS*2
+                        on each edge centered on the X,Z coordinates
+
+Optional Arguments:
+    entity_types      - Comma-separated list of entities type IDs to search for, minecraft:
+                        will be appended automatically if no namespace is given
+    sort              - Field to order list of entities by
+    reverse           - Whether or not to reverse the order ['true' or 'false']
+    use_last_modified - Whether or not to auto-adjust the age of entities by using the
+                        game file's last modified time
+    show_uuid         - whether or not to print out the UUID of each entity found
+"""
+
+
 def info(*messages):
     print("{}".format(' '.join([str(m) for m in messages])), file=sys.stderr)
 
 def fatal(*messages):
-    print("ERROR", file=sys.stderr)
     print("{}".format(' '.join([str(m) for m in messages])), file=sys.stderr)
     sys.exit(1)
 
@@ -48,7 +71,7 @@ profession_levels = ['Novice', 'Apprentice', 'Journeyman', 'Expert', 'Master']
 # Get mandatory arguments
 scriptpath = sys.argv.pop(0)
 if len(sys.argv) < 5:
-    fatal("Usage: entity_info <PATH/TO/MC/SAVE> <DIMENSION> <X> <Z> <RADIUS>")
+    fatal(HELP)
 mcsave = sys.argv.pop(0)
 dim = int(sys.argv.pop(0))
 x = int(sys.argv.pop(0))
