@@ -21,21 +21,19 @@ def repr_uuid(uuid):
 
 def add_entity(entities, entity, riding=None):
     uuid = repr_uuid(entity['UUID'].value)
-    entity_x = entity['Pos'][0].value
-    entity_y = entity['Pos'][1].value
-    entity_z = entity['Pos'][2].value
+    entity_type = entity['id'].value
 
     entities[uuid] = {
-        'type': entity['id'].value,
-        'x': entity_x,
-        'y': entity_y,
-        'z': entity_z,
+        'type': entity_type,
+        'x': entity['Pos'][0].value,
+        'y': entity['Pos'][1].value,
+        'z': entity['Pos'][2].value,
     }
     if 'Health' in entity:
         entities[uuid]['health'] = entity['Health'].value
     if riding is not None:
         entities[uuid]['riding'] = riding['id'].value
-    if entity['id'].value == 'villager':
+    if entity_type == 'villager':
         entities[uuid] = entities[uuid] | {
             'inventory': [(i[0].value, i[1].value) for i in entity['Inventory']],
             'profession': entity['VillagerData']['profession'].value,
