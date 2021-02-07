@@ -250,7 +250,8 @@ elif output_type == 'json':
         json_entities.append(entity | {'uuid': uuid})
 
     print(json.dumps({
-        'results': json_entities
+        'results': json_entities,
+        'count': len(json_entities)
         }))
 
 else:
