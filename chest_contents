@@ -56,6 +56,7 @@ sort_dim = 'z'
 sort_reverse = False
 entity_types = ['minecraft:chest', 'minecraft:hopper', 'minecraft:barrel']
 output_type = 'human'
+ignore_empty = True
 for a in sys.argv:
     i = a.index('=')
     k = a[0 : i]
@@ -77,6 +78,11 @@ for a in sys.argv:
             output_type = v
         else:
             fatal("No such output_type value: '{}'".format(v))
+    elif k == 'ignore_empty':
+        if v in ['true', 'false']:
+            ignore_empty = (v == 'true')
+        else:
+            fatal("No such ignore_empty value: '{}'".format(v))
     else:
         fatal("No such argument: '{}'".format(k))
 
@@ -135,20 +141,26 @@ for region_x in range(minx_region, maxx_region + 1):
             		entity_y = tile_entity['y'].value
             		entity_z = tile_entity['z'].value
             		if entity_id in entity_types:
-            			entities.append({
-            					'type': entity_id,
-            					'x': tile_entity['x'].value,
-            					'y': tile_entity['y'].value,
-            					'z': tile_entity['z'].value,
-            					'items': [{'type': i['id'].value, 'count': i['Count'].value} for i in tile_entity['Items']]
-            				})
+            			if not ignore_empty or len(tile_entity['Items']) > 0:
+	            			entities.append({
+	            					'type': entity_id,
+	            					'x': tile_entity['x'].value,
+	            					'y': tile_entity['y'].value,
+	            					'z': tile_entity['z'].value,
+	            					'items': [{'type': i['id'].value, 'count': i['Count'].value} for i in tile_entity['Items']]
+	            				})
 
 totals = {}
 for entity in entities:
+	entity['total'] = {}
 	for item in entity['items']:
 		if item['type'] not in totals:
 			totals[item['type']] = 0
 		totals[item['type']] += item['count']
+		if item['type'] not in entity['total']:
+			entity['total'][item['type']] = 0
+		entity['total'][item['type']] += item['count']
+
 
 if output_type == 'human':
     for entity in sorted(entities, key=lambda v: v[sort_dim], reverse=sort_reverse):
