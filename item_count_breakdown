@@ -1,0 +1,15 @@
+#!/bin/sh
+
+items=$1
+stacks=`echo "$items / 64" | bc`
+rem=`echo "$items % 64" | bc`
+
+if (( $stacks >= 27 ))
+then
+    shk=`echo "$stacks / 27" | bc`
+    stacks=`echo "$stacks % 27" | bc`
+    echo "${shk}sb ${stacks}s${rem}"
+else
+    echo "${stacks}s${rem}"
+fi
+
