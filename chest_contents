@@ -1,0 +1,153 @@
+#!/usr/bin/python3
+
+from nbt.nbt import *
+from nbt.region import *
+
+import json
+import math
+import os.path
+import sys
+
+
+def info(*messages):
+    print("{}".format(' '.join([str(m) for m in messages])), file=sys.stderr)
+
+def fatal(*messages):
+    print("{}".format(' '.join([str(m) for m in messages])), file=sys.stderr)
+    sys.exit(1)
+
+
+# Get mandatory arguments
+scriptpath = sys.argv.pop(0)
+
+mcsave = sys.argv.pop(0)
+dim = int(sys.argv.pop(0))
+x = int(sys.argv.pop(0))
+z = int(sys.argv.pop(0))
+r = int(sys.argv.pop(0))
+
+sort_dim = 'z'
+sort_reverse = False
+entity_types = ['minecraft:chest', 'minecraft:hopper', 'minecraft:barrel']
+output_type = 'human'
+for a in sys.argv:
+    i = a.index('=')
+    k = a[0 : i]
+    v = a[i + 1:]
+    if k == 'sort':
+        if v in ['x', 'y', 'z']:
+            sort_dim = v
+        else:
+            fatal("No such sort value: '{}'".format(v))
+    elif k == 'reverse':
+        if v in ['true', 'false']:
+            sort_reverse = (v == 'true')
+        else:
+            fatal("No such reverse value: '{}'".format(v))
+    elif k == 'entity_types':
+        entity_types = [e if ':' in e else 'minecraft:' + e for e in v.split(',')]
+    elif k == 'output_type':
+        if v in ['human', 'json']:
+            output_type = v
+        else:
+            fatal("No such output_type value: '{}'".format(v))
+    else:
+        fatal("No such argument: '{}'".format(k))
+
+# Get correct region files for dimension
+if dim == 0:
+    region_files = "{}/region".format(mcsave)
+elif dim == -1:
+    region_files = "{}/DIM-1/region".format(mcsave)
+elif dim == 1:
+    region_files = "{}/DIM1/region".format(mcsave)
+else:
+    fatal("Dimension must be -1, 0 or 1")
+if not os.path.exists(region_files):
+    fatal("Directory not found: {}".format(region_files))
+
+# Find block range to search within
+minx = x - r
+maxx = x + r
+minz = z - r
+maxz = z + r
+info("Searching blocks: {},{} to {},{}".format(minx, minz, maxx, maxz))
+
+# Calculate chunk range to search within
+minx_chunk = math.floor(minx / 16)
+maxx_chunk = math.floor(maxx / 16)
+minz_chunk = math.floor(minz / 16)
+maxz_chunk = math.floor(maxz / 16)
+info("Searching chunks: {},{} to {},{}".format(minx_chunk, minz_chunk, maxx_chunk, maxz_chunk))
+
+# Calculate region files to search within
+minx_region = math.floor(minx / 512)
+maxx_region = math.floor(maxx / 512)
+minz_region = math.floor(minz / 512)
+maxz_region = math.floor(maxz / 512)
+info("Searching regions: {},{} to {},{}".format(minx_region, minz_region, maxx_region, maxz_region))
+
+entities = []
+for region_x in range(minx_region, maxx_region + 1):
+    for region_z in range(minz_region, maxz_region + 1):
+        region_file = "{}/r.{}.{}.mca".format(region_files, region_x, region_z)
+        info("Region file: {}".format(region_file))
+        
+        region = RegionFile(region_file)
+        chunks = region.get_chunks()
+        for chunk in chunks:
+            x = chunk['x']
+            z = chunk['z']
+            chunk_nbt = region.get_chunk(x, z)
+            xPos = chunk_nbt['Level']['xPos'].value
+            zPos = chunk_nbt['Level']['zPos'].value
+            if xPos >= minx_chunk and xPos <= maxx_chunk and zPos >= minz_chunk and zPos <= maxz_chunk:
+            	info("Searching chunk: {} {}".format(x, z))
+            	for tile_entity in chunk_nbt['Level']['TileEntities']:
+            		entity_id = tile_entity['id'].value
+            		entity_x = tile_entity['x'].value
+            		entity_y = tile_entity['y'].value
+            		entity_z = tile_entity['z'].value
+            		if entity_id in entity_types:
+            			entities.append({
+            					'type': entity_id,
+            					'x': tile_entity['x'].value,
+            					'y': tile_entity['y'].value,
+            					'z': tile_entity['z'].value,
+            					'items': [{'type': i['id'].value, 'count': i['Count'].value} for i in tile_entity['Items']]
+            				})
+
+totals = {}
+for entity in entities:
+	for item in entity['items']:
+		if item['type'] not in totals:
+			totals[item['type']] = 0
+		totals[item['type']] += item['count']
+
+if output_type == 'human':
+    for entity in sorted(entities, key=lambda v: v[sort_dim], reverse=sort_reverse):
+
+    	print("{} - {} {} {}".format(entity['type'], entity['x'], entity['y'], entity['z']))
+    	for item in entity['items']:
+    		print("- {} {}".format(item['type'], item['count']))
+
+    	print()
+
+    print("TOTAL")
+    for entity_type, count in totals.items():
+    	print("{} {}".format(entity_type, count))
+
+elif output_type == 'json':
+
+    json_entities = []
+    for entity in sorted(entities, key=lambda v: v[sort_dim], reverse=sort_reverse):
+        json_entities.append(entity)
+
+    print(json.dumps({
+        'results': json_entities,
+        'total': totals,
+        'count': len(json_entities)
+        }))
+
+else:
+    fatal("Invalid output_type value: ''".format(output_type))
