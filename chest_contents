@@ -25,9 +25,11 @@ Mandatory arguments:
 Optional Arguments:
     entity_types      - Comma-separated list of tile entities type IDs to search for, minecraft:
                         will be appended automatically if no namespace is given.
-                        Defaults to: minecraft:chest, minecrasft:hopper, minecraft:barel
+                        Defaults to: minecraft:chest, minecraft:hopper, minecraft:barel
+    ignore_empty      - Whether or not to ignore empty tile entities ('true' or 'false', default: false)
+    show_breakdown    - Whether or not to show a breakdown by item slot ('true' or 'false', default: true)
     sort              - Field to order list of entities by.
-    reverse           - Whether or not to reverse the order ['true' or 'false'].
+    reverse           - Whether or not to reverse the order ('true' or 'false', default: false).
     output_type       - Output format, possible values are:
         human
         json
@@ -57,6 +59,7 @@ sort_reverse = False
 entity_types = ['minecraft:chest', 'minecraft:hopper', 'minecraft:barrel']
 output_type = 'human'
 ignore_empty = True
+show_breakdown = True
 for a in sys.argv:
     i = a.index('=')
     k = a[0 : i]
@@ -83,6 +86,11 @@ for a in sys.argv:
             ignore_empty = (v == 'true')
         else:
             fatal("No such ignore_empty value: '{}'".format(v))
+    elif k == 'show_breakdown':
+        if v in ['true', 'false']:
+            show_breakdown = (v == 'true')
+        else:
+            fatal("No such show_breakdown value: '{}'".format(v))
     else:
         fatal("No such argument: '{}'".format(k))
 
@@ -134,46 +142,50 @@ for region_x in range(minx_region, maxx_region + 1):
             xPos = chunk_nbt['Level']['xPos'].value
             zPos = chunk_nbt['Level']['zPos'].value
             if xPos >= minx_chunk and xPos <= maxx_chunk and zPos >= minz_chunk and zPos <= maxz_chunk:
-            	info("Searching chunk: {} {}".format(x, z))
-            	for tile_entity in chunk_nbt['Level']['TileEntities']:
-            		entity_id = tile_entity['id'].value
-            		entity_x = tile_entity['x'].value
-            		entity_y = tile_entity['y'].value
-            		entity_z = tile_entity['z'].value
-            		if entity_id in entity_types:
-            			if not ignore_empty or len(tile_entity['Items']) > 0:
-	            			entities.append({
-	            					'type': entity_id,
-	            					'x': tile_entity['x'].value,
-	            					'y': tile_entity['y'].value,
-	            					'z': tile_entity['z'].value,
-	            					'items': [{'type': i['id'].value, 'count': i['Count'].value} for i in tile_entity['Items']]
-	            				})
+                info("Searching chunk: {} {}".format(x, z))
+                for tile_entity in chunk_nbt['Level']['TileEntities']:
+                    entity_id = tile_entity['id'].value
+                    entity_x = tile_entity['x'].value
+                    entity_y = tile_entity['y'].value
+                    entity_z = tile_entity['z'].value
+                    if entity_id in entity_types:
+                        if not ignore_empty or len(tile_entity['Items']) > 0:
+                            entities.append({
+                                    'type': entity_id,
+                                    'x': tile_entity['x'].value,
+                                    'y': tile_entity['y'].value,
+                                    'z': tile_entity['z'].value,
+                                    'items': [{'type': i['id'].value, 'count': i['Count'].value} for i in tile_entity['Items']]
+                                })
 
 totals = {}
 for entity in entities:
-	entity['total'] = {}
-	for item in entity['items']:
-		if item['type'] not in totals:
-			totals[item['type']] = 0
-		totals[item['type']] += item['count']
-		if item['type'] not in entity['total']:
-			entity['total'][item['type']] = 0
-		entity['total'][item['type']] += item['count']
+    entity['total'] = {}
+    for item in entity['items']:
+        if item['type'] not in totals:
+            totals[item['type']] = 0
+        totals[item['type']] += item['count']
+        if item['type'] not in entity['total']:
+            entity['total'][item['type']] = 0
+        entity['total'][item['type']] += item['count']
 
 
 if output_type == 'human':
     for entity in sorted(entities, key=lambda v: v[sort_dim], reverse=sort_reverse):
 
-    	print("{} - {} {} {}".format(entity['type'], entity['x'], entity['y'], entity['z']))
-    	for item in entity['items']:
-    		print("- {} {}".format(item['type'], item['count']))
+        print("{} - {} {} {}".format(entity['type'], entity['x'], entity['y'], entity['z']))
+        if show_breakdown:
+	        for item in entity['items']:
+	            print("- {} {}".format(item['type'], item['count']))
+        	print("TOTAL")
+        for entity_type, count in entity['total'].items():
+            print("- {} {}".format(entity_type, count))
 
-    	print()
+        print()
 
     print("TOTAL")
     for entity_type, count in totals.items():
-    	print("{} {}".format(entity_type, count))
+        print("{} {}".format(entity_type, count))
 
 elif output_type == 'json':
 
