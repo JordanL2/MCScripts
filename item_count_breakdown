@@ -4,12 +4,18 @@ items=$1
 stacks=`echo "$items / 64" | bc`
 rem=`echo "$items % 64" | bc`
 
+perc=''
+if [[ "$#" -ge 2 ]]
+then
+	perc=`echo "scale=2; $items * 100 / $2" | bc`
+	perc=" ($perc%)"
+fi
+
 if (( $stacks >= 27 ))
 then
     shk=`echo "$stacks / 27" | bc`
     stacks=`echo "$stacks % 27" | bc`
-    echo "${shk}sb ${stacks}s${rem}"
+    echo "${shk}sb ${stacks}s${rem}${perc}"
 else
-    echo "${stacks}s${rem}"
+    echo "${stacks}s${rem}${perc}"
 fi
-
