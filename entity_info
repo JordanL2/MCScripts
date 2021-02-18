@@ -7,6 +7,7 @@ import json
 import math
 import os.path
 import sys
+import time
 
 
 HELP = """Usage: entity_info <PATH/TO/MC/SAVE> <DIMENSION> <X> <Z> <RADIUS> [option_name=option_value ...]
@@ -169,26 +170,35 @@ for region_x in range(minx_region, maxx_region + 1):
         last_modified = now - os.path.getmtime(region_file)
         info("Last modified: {} seconds ago".format(last_modified))
         
-        region = RegionFile(region_file)
-        chunks = region.get_chunks()
-        for chunk in chunks:
-            x = chunk['x']
-            z = chunk['z']
-            chunk_nbt = region.get_chunk(x, z)
-            xPos = chunk_nbt['Level']['xPos'].value
-            zPos = chunk_nbt['Level']['zPos'].value
-            if xPos >= minx_chunk and xPos <= maxx_chunk and zPos >= minz_chunk and zPos <= maxz_chunk:
-                for entity in chunk_nbt['Level']['Entities']:
-                    entity_x = entity['Pos'][0].value
-                    entity_y = entity['Pos'][1].value
-                    entity_z = entity['Pos'][2].value
-                    if entity_x >= minx and entity_x <= maxx and entity_z >= minz and entity_z <= maxz:
-                        if entity_types is None or entity['id'].value in entity_types:
-                            add_entity(entities, entity)
-                        if 'Passengers' in entity:
-                            for passenger in entity['Passengers']:
-                                if entity_types is None or passenger['id'].value in entity_types:
-                                    add_entity(entities, passenger, entity)
+        tries = 3
+        while True:
+            try:
+                region = RegionFile(region_file)
+                chunks = region.get_chunks()
+                for chunk in chunks:
+                    x = chunk['x']
+                    z = chunk['z']
+                    chunk_nbt = region.get_chunk(x, z)
+                    xPos = chunk_nbt['Level']['xPos'].value
+                    zPos = chunk_nbt['Level']['zPos'].value
+                    if xPos >= minx_chunk and xPos <= maxx_chunk and zPos >= minz_chunk and zPos <= maxz_chunk:
+                        for entity in chunk_nbt['Level']['Entities']:
+                            entity_x = entity['Pos'][0].value
+                            entity_y = entity['Pos'][1].value
+                            entity_z = entity['Pos'][2].value
+                            if entity_x >= minx and entity_x <= maxx and entity_z >= minz and entity_z <= maxz:
+                                if entity_types is None or entity['id'].value in entity_types:
+                                    add_entity(entities, entity)
+                                if 'Passengers' in entity:
+                                    for passenger in entity['Passengers']:
+                                        if entity_types is None or passenger['id'].value in entity_types:
+                                            add_entity(entities, passenger, entity)
+                break
+            except Exception as e:
+                tries -= 1
+                if tries == 0:
+                    raise e
+                time.sleep(5)
 
 # Output entities found
 if output_type == 'human':
