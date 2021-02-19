@@ -10,7 +10,7 @@ import sys
 import time
 
 
-HELP = """Usage: chest_contents <PATH/TO/MC/SAVE> <DIMENSION> <X> <Z> <RADIUS> [option_name=option_value ...]
+HELP = """Usage: chest_contents <PATH/TO/MC/SAVE> <DIMENSION> <MINX> <MINZ> <MAXX> <MAXZ> [option_name=option_value ...]
 
 Mandatory arguments:
     PATH/TO/MC/SAVE   - Path to the Minecraft game save directory, usually found in ~/.minecraft/saves
@@ -18,10 +18,10 @@ Mandatory arguments:
         -1 = Nether
          0 = Overworld
          1 = End
-    X                 - X axis coordinate to search (blocks)
-    Z                 - Z axis coordinate to search (blocks)
-    RADIUS            - Square-radius to search within, will search within a square RADIUS*2
-                        on each edge centered on the X,Z coordinates
+    MINX              - Start X axis coordinate to search (blocks)
+    MINZ              - Start Z axis coordinate to search (blocks)
+    MAXX              - End X axis coordinate to search (blocks)
+    MAXZ              - End Z axis coordinate to search (blocks)
 
 Optional Arguments:
     entity_types      - Comma-separated list of tile entities type IDs to search for, minecraft:
@@ -47,13 +47,14 @@ def fatal(*messages):
 
 # Get mandatory arguments
 scriptpath = sys.argv.pop(0)
-if len(sys.argv) < 5:
+if len(sys.argv) < 6:
     fatal(HELP)
 mcsave = sys.argv.pop(0)
 dim = int(sys.argv.pop(0))
-x = int(sys.argv.pop(0))
-z = int(sys.argv.pop(0))
-r = int(sys.argv.pop(0))
+minx = int(sys.argv.pop(0))
+minz = int(sys.argv.pop(0))
+maxx = int(sys.argv.pop(0))
+maxz = int(sys.argv.pop(0))
 
 sort_dim = 'z'
 sort_reverse = False
@@ -106,13 +107,6 @@ else:
     fatal("Dimension must be -1, 0 or 1")
 if not os.path.exists(region_files):
     fatal("Directory not found: {}".format(region_files))
-
-# Find block range to search within
-minx = x - r
-maxx = x + r
-minz = z - r
-maxz = z + r
-info("Searching blocks: {},{} to {},{}".format(minx, minz, maxx, maxz))
 
 # Calculate chunk range to search within
 minx_chunk = math.floor(minx / 16)
