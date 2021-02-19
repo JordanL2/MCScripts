@@ -27,10 +27,11 @@ Optional Arguments:
     entity_types      - Comma-separated list of entities type IDs to search for, minecraft:
                         will be appended automatically if no namespace is given
     sort              - Field to order list of entities by
-    reverse           - Whether or not to reverse the order ['true' or 'false']
+    reverse           - Whether or not to reverse the order ('true' or 'false', default: false)
     use_last_modified - Whether or not to auto-adjust the age of entities by using the
-                        game file's last modified time
+                        game file's last modified time ('true' or 'false', default: false)
     show_uuid         - Whether or not to print out the UUID of each entity found
+                        ('true' or 'false', default: false)
     output_type       - Output format, possible values are:
         human
         json

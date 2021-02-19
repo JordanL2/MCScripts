@@ -26,11 +26,11 @@ Mandatory arguments:
 Optional Arguments:
     entity_types      - Comma-separated list of tile entities type IDs to search for, minecraft:
                         will be appended automatically if no namespace is given.
-                        Defaults to: minecraft:chest, minecraft:hopper, minecraft:barel
-    ignore_empty      - Whether or not to ignore empty tile entities ('true' or 'false', default: false)
-    show_breakdown    - Whether or not to show a breakdown by item slot ('true' or 'false', default: true)
+                        Defaults to: minecraft:chest, minecraft:hopper, minecraft:barrel
     sort              - Field to order list of entities by.
     reverse           - Whether or not to reverse the order ('true' or 'false', default: false).
+    ignore_empty      - Whether or not to ignore empty tile entities ('true' or 'false', default: false)
+    show_breakdown    - Whether or not to show a breakdown by item slot ('true' or 'false', default: true)
     output_type       - Output format, possible values are:
         human
         json
