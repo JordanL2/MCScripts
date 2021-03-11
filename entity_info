@@ -85,6 +85,15 @@ minz = int(sys.argv.pop(0))
 maxx = int(sys.argv.pop(0))
 maxz = int(sys.argv.pop(0))
 
+if maxx < minx:
+    temp = minx
+    minx = maxx
+    maxx = temp
+if maxz < minz:
+    temp = minz
+    minz = maxz
+    maxz = temp
+
 # Get optional arguments
 sort_dim = 'z'
 sort_reverse = False
