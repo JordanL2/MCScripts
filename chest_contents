@@ -146,7 +146,7 @@ for region_x in range(minx_region, maxx_region + 1):
                             entity_x = tile_entity['x'].value
                             entity_y = tile_entity['y'].value
                             entity_z = tile_entity['z'].value
-                            if entity_id in entity_types:
+                            if entity_id in entity_types and entity_x >= minx and entity_x <= maxx and entity_z >= minz and entity_z <= maxz:
                                 if not ignore_empty or len(tile_entity['Items']) > 0:
                                     entities.append({
                                             'type': entity_id,
