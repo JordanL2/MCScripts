@@ -3,7 +3,13 @@
 from nbt.region import RegionFile
 
 import os
+import os.path
 import sys
+
+
+def fatal(*messages):
+    print("{}".format(' '.join([str(m) for m in messages])), file=sys.stderr)
+    sys.exit(1)
 
 
 scriptpath = sys.argv.pop(0)
@@ -12,6 +18,7 @@ scriptpath = sys.argv.pop(0)
 region_file = None
 cutoff_ticks = 1200 # 60 seconds (20 ticks per second * 60)
 dry_run = False
+path = os.getcwd()
 
 # Get arguments
 for a in sys.argv:
@@ -27,6 +34,11 @@ for a in sys.argv:
             dry_run = (v == 'true')
         else:
             fatal("No such dryrun value: '{}'".format(v))
+    elif k == 'path':
+        if os.path.exists(v):
+            path = v
+        else:
+            fatal("No such path: {}".format(v))
     else:
         fatal("No such argument: '{}'".format(k))
 
@@ -35,7 +47,7 @@ files = []
 if region_file is not None:
     files = [region_file]
 else:
-    files = os.listdir()
+    files = os.listdir(path=path)
 
 # Delete all chunks in files less inhabited than the cutoff number of ticks
 for file in files:
@@ -51,6 +63,12 @@ for file in files:
             raise e
         inhabited_time = chunk_nbt['Level']['InhabitedTime'].value
         if inhabited_time < cutoff_ticks:
+            print("{},{},{},{}".format(file, x, z, inhabited_time))
             if not dry_run:
                 region.unlink_chunk(x, z)
-            print("{},{},{},{}".format(file, x, z, inhabited_time))
+
+    # If there are no chunks left in file, delete it
+    if len(region.get_chunks()) == 0:
+        print("Deleting file {}".format(file))
+        if not dry_run:
+            os.remove(path + '/' + file)
