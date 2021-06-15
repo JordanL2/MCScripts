@@ -1,0 +1,57 @@
+#!/usr/bin/python3
+
+from nbt.region import RegionFile
+
+import os
+import os.path
+import sys
+
+
+def fatal(*messages):
+    print("{}".format(' '.join([str(m) for m in messages])), file=sys.stderr)
+    sys.exit(1)
+
+
+scriptpath = sys.argv.pop(0)
+
+# Default argument values
+region_file = None
+path = os.getcwd()
+
+# Get arguments
+for a in sys.argv:
+    i = a.index('=')
+    k = a[0 : i]
+    v = a[i + 1:]
+    if k == 'file':
+        region_file = v
+    elif k == 'path':
+        if os.path.exists(v):
+            path = v
+        else:
+            fatal("No such path: {}".format(v))
+    else:
+        fatal("No such argument: '{}'".format(k))
+
+# Get list of files
+files = []
+if region_file is not None:
+    files = [region_file]
+else:
+    files = os.listdir(path=path)
+
+# Reset inhabited time in all chunks
+for file in files:
+    filepath = os.path.join(path, file)
+    region = RegionFile(filepath)
+    chunks = region.get_chunks()
+    for chunk in chunks:
+        x = chunk['x']
+        z = chunk['z']
+        try:
+            chunk_nbt = region.get_chunk(x, z)
+        except Exception as e:
+            print("Error with file {} chunk {},{}".format(file, x, z), file=sys.stderr)
+            raise e
+        chunk_nbt['Level']['InhabitedTime'] = TAG_Long(0)
+        region.write_chunk(x, z, chunk_nbt)
