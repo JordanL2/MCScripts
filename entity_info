@@ -62,7 +62,7 @@ def add_entity(entities, entity, riding=None):
         entities[uuid]['health'] = entity['Health'].value
     if riding is not None:
         entities[uuid]['riding'] = riding['id'].value
-    if entity_type == 'villager':
+    if entity_type == 'minecraft:villager':
         entities[uuid] = entities[uuid] | {
             'inventory': [(i[0].value, i[1].value) for i in entity['Inventory']],
             'profession': entity['VillagerData']['profession'].value,
@@ -139,11 +139,11 @@ for a in sys.argv:
 
 # Get correct region files for dimension
 if dim == 0:
-    region_files = "{}/region".format(mcsave)
+    region_files = "{}/entities".format(mcsave)
 elif dim == -1:
-    region_files = "{}/DIM-1/region".format(mcsave)
+    region_files = "{}/DIM-1/entities".format(mcsave)
 elif dim == 1:
-    region_files = "{}/DIM1/region".format(mcsave)
+    region_files = "{}/DIM1/entities".format(mcsave)
 else:
     fatal("Dimension must be -1, 0 or 1")
 if not os.path.exists(region_files):
@@ -183,20 +183,21 @@ for region_x in range(minx_region, maxx_region + 1):
                     x = chunk['x']
                     z = chunk['z']
                     chunk_nbt = region.get_chunk(x, z)
-                    xPos = chunk_nbt['Level']['xPos'].value
-                    zPos = chunk_nbt['Level']['zPos'].value
+                    xPos = chunk_nbt['Position'][0]
+                    zPos = chunk_nbt['Position'][1]
                     if xPos >= minx_chunk and xPos <= maxx_chunk and zPos >= minz_chunk and zPos <= maxz_chunk:
-                        for entity in chunk_nbt['Level']['Entities']:
-                            entity_x = entity['Pos'][0].value
-                            entity_y = entity['Pos'][1].value
-                            entity_z = entity['Pos'][2].value
-                            if entity_x >= minx and entity_x <= maxx and entity_z >= minz and entity_z <= maxz:
-                                if entity_types is None or entity['id'].value in entity_types:
-                                    add_entity(entities, entity)
-                                if 'Passengers' in entity:
-                                    for passenger in entity['Passengers']:
-                                        if entity_types is None or passenger['id'].value in entity_types:
-                                            add_entity(entities, passenger, entity)
+                        if 'Entities' in chunk_nbt:
+                            for entity in chunk_nbt['Entities']:
+                                entity_x = entity['Pos'][0].value
+                                entity_y = entity['Pos'][1].value
+                                entity_z = entity['Pos'][2].value
+                                if entity_x >= minx and entity_x <= maxx and entity_z >= minz and entity_z <= maxz:
+                                    if entity_types is None or entity['id'].value in entity_types:
+                                        add_entity(entities, entity)
+                                    if 'Passengers' in entity:
+                                        for passenger in entity['Passengers']:
+                                            if entity_types is None or passenger['id'].value in entity_types:
+                                                add_entity(entities, passenger, entity)
                 break
             except Exception as e:
                 tries -= 1
@@ -245,7 +246,7 @@ if output_type == 'human':
             # Show inventory
             for n, i in enumerate(entity['inventory']):
                 print("[{}] {}: {}".format(n + 1, i[0], i[1]))
-            for n in range(len(villager['inventory']) + 1, 9):
+            for n in range(len(entity['inventory']) + 1, 9):
                 print("[{}] -".format(n))
             
             # Show gossips
