@@ -62,6 +62,9 @@ def add_entity(entities, entity, riding=None):
         entities[uuid]['health'] = entity['Health'].value
     if riding is not None:
         entities[uuid]['riding'] = riding['id'].value
+    if 'CustomName' in entity:
+        custom_name = json.loads(entity['CustomName'].value)
+        entities[uuid]['custom_name'] = custom_name['text']
     if entity_type == 'minecraft:villager':
         entities[uuid] = entities[uuid] | {
             'inventory': [(i[0].value, i[1].value) for i in entity['Inventory']],
@@ -214,14 +217,17 @@ if output_type == 'human':
             print(uuid)
 
         # Show basic info
+        custom_name = ''
+        if 'custom_name' in entity:
+            custom_name = " ({})".format(entity['custom_name'])
         health = ''
         if 'health' in entity:
             health = " | {}♥".format(int(entity['health']))
         riding = ''
         if 'riding' in entity:
             riding = " | Riding: {}".format(entity['riding'])
-        print("{} | {} {} {}{}{}".format(
-            entity['type'],
+        print("{}{} | {} {} {}{}".format(
+            entity['type'], custom_name, 
             math.floor(entity['x']), math.floor(entity['y']), math.floor(entity['z']),
             health, riding))
 
