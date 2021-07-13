@@ -175,7 +175,9 @@ for region_x in range(minx_region, maxx_region + 1):
         info("Region file: {}".format(region_file))
 
         last_modified = now - os.path.getmtime(region_file)
-        info("Last modified: {} seconds ago".format(last_modified))
+        last_modified_min = int(last_modified / 60)
+        last_modified_sec = int(last_modified % 60)
+        info("Last modified: {0:02d}:{1:02d} ago".format(last_modified_min, last_modified_sec))
         
         tries = 3
         while True:
