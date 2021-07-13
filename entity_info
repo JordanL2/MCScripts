@@ -210,6 +210,8 @@ for region_x in range(minx_region, maxx_region + 1):
                     raise e
                 time.sleep(5)
 
+info("")
+
 # Output entities found
 if output_type == 'human':
     for uuid, entity in sorted(entities.items(), key=lambda v: v[1][sort_dim], reverse=sort_reverse):
