@@ -43,6 +43,8 @@ else:
 # Reset inhabited time in all chunks
 for file in files:
     filepath = os.path.join(path, file)
+    if not os.path.exists(filepath):
+        continue
     region = RegionFile(filepath)
     chunks = region.get_chunks()
     for chunk in chunks:

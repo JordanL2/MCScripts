@@ -172,6 +172,8 @@ now = time.time()
 for region_x in range(minx_region, maxx_region + 1):
     for region_z in range(minz_region, maxz_region + 1):
         region_file = "{}/r.{}.{}.mca".format(region_files, region_x, region_z)
+        if not os.path.exists(region_file):
+            continue
         last_modified = now - os.path.getmtime(region_file)
         last_modified_min = int(last_modified / 60)
         last_modified_sec = int(last_modified % 60)

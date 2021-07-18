@@ -135,6 +135,8 @@ entities = []
 for region_x in range(minx_region, maxx_region + 1):
     for region_z in range(minz_region, maxz_region + 1):
         region_file = "{}/r.{}.{}.mca".format(region_files, region_x, region_z)
+        if not os.path.exists(region_file):
+            continue
         info("Region file: {}".format(region_file))
         
         tries = 3

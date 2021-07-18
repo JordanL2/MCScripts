@@ -52,6 +52,8 @@ else:
 # Delete all chunks in files less inhabited than the cutoff number of ticks
 for file in files:
     filepath = os.path.join(path, file)
+    if not os.path.exists(filepath):
+        continue
     region = RegionFile(filepath)
     chunks = region.get_chunks()
     for chunk in chunks:
