@@ -1,0 +1,76 @@
+#!/usr/bin/python3
+
+from nbt.region import RegionFile
+
+import os
+import os.path
+import sys
+
+
+def fatal(*messages):
+    print("{}".format(' '.join([str(m) for m in messages])), file=sys.stderr)
+    sys.exit(1)
+
+
+scriptpath = sys.argv.pop(0)
+
+dry_run = False
+
+path = os.getcwd()
+
+# Get arguments
+for a in sys.argv:
+    i = a.index('=')
+    k = a[0 : i]
+    v = a[i + 1:]
+    if k == 'dryrun':
+        if v in ['true', 'false']:
+            dry_run = (v == 'true')
+        else:
+            fatal("No such dryrun value: '{}'".format(v))
+    elif k == 'path':
+        if os.path.exists(v):
+            path = v
+        else:
+            fatal("No such path: {}".format(v))
+    else:
+        fatal("No such argument: '{}'".format(k))
+
+# Get list of files to trim
+files = []
+files = os.listdir(path=path)
+
+# Delete all chunks in entity files that don't have a corresponding region file
+for file in files:
+    entityfile = os.path.join(path, file)
+    if not os.path.exists(entityfile):
+        continue
+    regionfile = os.path.join(path, '../region', file)
+    if not os.path.exists(regionfile):
+        print("Deleting file {} as corresponding region file not found".format(entityfile))
+        if not dry_run:
+            os.remove(entityfile)
+        continue
+
+    regionregion = RegionFile(regionfile)
+    regionchunks = regionregion.get_chunks()
+    allregionchunks = set()
+    for chunk in regionchunks:
+        allregionchunks.add((chunk['x'], chunk['z']))
+
+    entityregion = RegionFile(entityfile)
+    entitychunks = entityregion.get_chunks()
+    for chunk in entitychunks:
+        x = chunk['x']
+        z = chunk['z']
+        thischunk = (chunk['x'], chunk['z'])
+        if thischunk not in allregionchunks:
+            print("Deleting chunk {},{} from file {}".format(chunk['x'], chunk['z'], entityfile))
+            if not dry_run:
+                entityregion.unlink_chunk(x, z)
+
+    # If there are no chunks left in file, delete it
+    if len(entityregion.get_chunks()) == 0:
+        print("Deleting file {} as no chunks left".format(entityfile))
+        if not dry_run:
+            os.remove(entityfile)
